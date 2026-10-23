@@ -33,7 +33,7 @@ C10 = "Presenter_speaking_to_camera_720p_20261023174737.mp4"
 # "First: the 48-hour waiting rule is gone" isn't in any clip; it plays as VO
 # over a full-screen Rule #1 card (speaker hidden, so no lip-sync mismatch).
 VO_FIRST = "audio/vo_first.wav"
-VO_LEAD, VO_LEN, VO_GONE = 0.25, 2.43, 2.16   # lead-in, line length, "gone" onset
+VO_LEAD, VO_LEN, VO_GONE = 0.15, 2.42, 2.16   # lead-in, line length, "gone" onset
 TK_DUR = VO_LEAD + VO_LEN + 0.22
 
 # (scene, clip, in, out, X fraction, scale, slide frames, opts)
@@ -41,15 +41,15 @@ TK_DUR = VO_LEAD + VO_LEN + 0.22
 # filler), mute, fade (clip-time voice fade-out window).
 SEGMENTS = [
     (1, C1, 0.90, 8.72, 0.50, 1.05, 0, {}),                        # hook
-    (2, C2, 1.20, 3.75, 0.50, 1.18, 0, {}),                        # intro (silent smile cut)
-    ("tk", C2, 3.75, 6.00, 0.50, 1.18, 0, {"dur": TK_DUR, "mute": True}),  # Rule #1 takeover (hidden)
+    (2, C2, 1.20, 3.72, 0.50, 1.18, 0, {}),                        # intro (silent smile cut)
+    ("tk", C2, 3.72, 6.00, 0.50, 1.18, 0, {"dur": TK_DUR, "mute": True}),  # Rule #1 takeover (hidden)
     (3, C4, 0.80, 5.72, 0.38, 0.95, 10, {}),                       # rule 1a
     (4, C6, 0.56, 5.15, 0.38, 1.10, 0, {}),                        # rule 1b ... "Part D drug plans."
     (4, C6, 5.62, 8.60, 0.38, 1.00, 0, {}),                        # jump cut -> "Now, you can meet..."
     (5, C3, 0.00, 5.15, 0.38, 0.95, 0, {}),                        # rule 2a
     (6, C9, 0.05, 7.70, 0.38, 1.10, 0, {}),                        # rule 2b
-    (7, C10, 0.12, 7.95, 0.62, 0.95, 12, {}),                      # rule 3
-    (8, C8, 0.45, 5.80, 0.62, 1.12, 0, {}),                        # nuance
+    (7, C10, 0.12, 7.75, 0.62, 0.95, 12, {}),                      # rule 3
+    (8, C8, 0.55, 5.80, 0.62, 1.12, 0, {}),                        # nuance
     (9, C7, 0.00, 9.55, 0.50, 0.90, 10, {"fade": (9.30, 9.40)}),   # takeaway (natural end on "told")
     (10, C5, 0.20, 8.00, 0.50, 1.05, 0, {}),                       # CTA
 ]
@@ -90,7 +90,7 @@ T = dict(
     tk=S("tk"), vo=S("tk") + VO_LEAD, gone=S("tk") + VO_LEAD + VO_GONE,
     card1=S("tk"), red1=Wd(3, 2.30) - 0.20, watch=Wd(3, 2.30),
     pill_ma=Wd(4, 2.78), pill_pd=Wd(4, 3.76),
-    strike1=Wd(4, 5.72), green1=Wd(4, 6.86), chime1=Wd(4, 7.90),
+    strike1=Wd(4, 5.85), green1=Wd(4, 6.86), chime1=Wd(4, 7.90),
     dock1=S(5), card2=S(5) + 0.28, flow2=Wd(5, 3.02),
     old2=S(6) + 0.15, wait12=Wd(6, 3.96), buzz2=Wd(6, 4.32),
     new2=Wd(6, 6.26), click2=Wd(6, 7.04),
@@ -542,7 +542,7 @@ def strike(d, x0, y, x1, p, color=RED, width=8):
     d.line([(x0, y), (lerp(x0, x1, p), y)], fill=color, width=width)
 
 
-TKR = (MX, CARD[1], W - MX, 1720)   # full-height Rule #1 takeover card
+TKR = (-40, -40, W + 40, H + 40)   # full-screen Rule #1 takeover card (corners bleed off-frame)
 
 
 @lru_cache(None)
@@ -584,7 +584,7 @@ def draw_card1(layer, t):
         rect = lerp_rect(TKR, CARD, q)
         ta, ca = 1 - clamp(q / 0.4), clamp((q - 0.6) / 0.4)
     else:
-        p = ease_out(prog(t, T["tk"], 0.38))
+        p = ease_out(prog(t, T["tk"], 0.3))
         rect, ta = lerp_rect(tr, TKR, p), clamp((p - 0.6) / 0.4)
     draw_card_frame(layer, rect, NAVY)
     if ta > 0:
@@ -970,7 +970,7 @@ def draw_hero(layer, t):
 def hero_img():
     im = blank(CW, 600)
     d = ImageDraw.Draw(im)
-    fg, sub = (WHITE, (225, 232, 242)) if NAVY_THEME else (NAVY, INK)
+    fg, sub = ((245, 166, 35), WHITE) if NAVY_THEME else (NAVY, INK)
     d.text((CW / 2, 210), "3", font=font("black", 330), fill=fg, anchor="mm")
     d.text((CW / 2, 420), "Medicare sales rules", font=font("xb", 60), fill=sub, anchor="mm")
     d.text((CW / 2, 494), "change in 2027", font=font("xb", 60), fill=sub, anchor="mm")
@@ -1077,7 +1077,7 @@ def speaker_pose(t):
 def speaker_alpha(t):
     """Hidden behind the Rule #1 takeover card."""
     if T["tk"] <= t < S(3):
-        return 1 - ease_in_out(prog(t, T["tk"] + 0.1, 0.25))
+        return 1 - ease_in_out(prog(t, T["tk"], 0.2))
     if S(3) <= t < S(3) + 0.3:
         return ease_in_out(prog(t, S(3) + 0.05, 0.25))
     return 1.0

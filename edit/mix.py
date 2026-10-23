@@ -55,7 +55,7 @@ for i, sg in enumerate(R.SEGMENTS):
 # "First: ..." line (Arric Allen ElevenLabs voice), matched to the clip voice level
 vo = load(os.path.join(ASSETS, os.path.basename(R.VO_FIRST)))
 clip_rms = rms_db(voice[np.abs(voice) > 0.01])
-vo *= db(clip_rms - rms_db(vo[np.abs(vo) > 0.01]))
+vo *= db(clip_rms - rms_db(vo[np.abs(vo) > 0.01]) - 1.2)   # -1.2 dB: matches neighbours by LUFS
 o = int(round(T["vo"] * SR))
 voice[o:o + len(vo)] += vo[: n_total - o]
 speech = voice[np.abs(voice) > 0.01]
@@ -154,7 +154,7 @@ hit("warnchime", T["warn3"], -13)
 # Scene 9
 hit("snap", T["dock3"] + 0.05, -13)
 hit("shuffle", T["stack"], -11)
-hit("highlight", T["swipe"], -11)
+hit("highlight", T["swipe"], -19)
 # Scene 10
 hit("keys", T["phone"], -16)
 hit("click", T["webclick"], -9)
