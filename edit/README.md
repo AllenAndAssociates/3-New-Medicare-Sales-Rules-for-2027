@@ -19,3 +19,8 @@ ffmpeg -i video.mp4 -i mix.wav -map 0:v -map 1:a -c:v copy -c:a aac -b:a 192k -s
 ```
 
 The A&A badge is a placeholder monogram — swap `logo_badge()` for the real logo file.
+
+`audio/vo_first.wav` ("First: the 48-hour waiting rule is gone") is not in any source
+clip; it was generated with the "Arric Allen" ElevenLabs voice and plays over a
+full-screen Rule #1 card with the speaker hidden, so there is no lip-sync mismatch.
+Replace it with a real Omni take if you regenerate that line.

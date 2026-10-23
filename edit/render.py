@@ -19,49 +19,67 @@ W, H, FPS = 1080, 1920, 30
 TAIL = 0.7  # hold on last frame so the final chord rings out
 
 # ---------------------------------------------------------------- timeline
-# (clip file, in, out) — trimmed to the spoken line with a little air.
+C1 = "Man_speaking_about_Medicare_rules_20261023175043.mp4"
+C2 = "Man_speaking_to_camera_720p_20261023174212.mp4"
+C3 = "Presenter_explaining_Medicare_ed…_720p_20261023174558.mp4"
+C4 = "Presenter_explaining_waiting_rul…_720p_20261023174322.mp4"
+C5 = "Presenter_giving_Medicare_guidance_720p_20261023174956.mp4"
+C6 = "Presenter_speaking_about_Medicar…_720p_20261023175136.mp4"
+C7 = "Presenter_speaking_about_Medicar…_720p_20261023175346.mp4"
+C8 = "Presenter_speaking_against_green…_720p_20261023174859.mp4"
+C9 = "Presenter_speaking_to_camera_720p_20261023174650.mp4"
+C10 = "Presenter_speaking_to_camera_720p_20261023174737.mp4"
+
+# "First: the 48-hour waiting rule is gone" isn't in any clip; it plays as VO
+# over a full-screen Rule #1 card (speaker hidden, so no lip-sync mismatch).
+VO_FIRST = "audio/vo_first.wav"
+VO_LEAD, VO_LEN, VO_GONE = 0.25, 2.43, 2.16   # lead-in, line length, "gone" onset
+TK_DUR = VO_LEAD + VO_LEN + 0.22
+
+# (scene, clip, in, out, X fraction, scale, slide frames, opts)
+# Trimmed to the spoken line; silent holds removed. opts: dur (retime hidden
+# filler), mute, fade (clip-time voice fade-out window).
 SEGMENTS = [
-    ("Man_speaking_about_Medicare_rules_20261023175043.mp4", 0.90, 8.95),      # 1 hook
-    ("Man_speaking_to_camera_720p_20261023174212.mp4", 1.10, 4.20),            # 2 intro
-    ("Presenter_explaining_waiting_rul…_720p_20261023174322.mp4", 0.70, 5.90),  # 3 rule 1a
-    ("Presenter_speaking_about_Medicar…_720p_20261023175136.mp4", 0.50, 8.60),  # 4 rule 1b
-    ("Presenter_explaining_Medicare_ed…_720p_20261023174558.mp4", 0.00, 5.30),  # 5 rule 2a
-    ("Presenter_speaking_to_camera_720p_20261023174650.mp4", 0.00, 7.85),       # 6 rule 2b
-    ("Presenter_speaking_to_camera_720p_20261023174737.mp4", 0.05, 7.95),       # 7 rule 3
-    ("Presenter_speaking_against_green…_720p_20261023174859.mp4", 0.45, 5.80),  # 8 nuance
-    ("Presenter_speaking_about_Medicar…_720p_20261023175346.mp4", 0.00, 9.70),  # 9 takeaway
-    ("Presenter_giving_Medicare_guidance_720p_20261023174956.mp4", 0.20, 8.00), # 10 CTA
+    (1, C1, 0.90, 8.72, 0.50, 1.05, 0, {}),                        # hook
+    (2, C2, 1.20, 3.75, 0.50, 1.18, 0, {}),                        # intro (silent smile cut)
+    ("tk", C2, 3.75, 6.00, 0.50, 1.18, 0, {"dur": TK_DUR, "mute": True}),  # Rule #1 takeover (hidden)
+    (3, C4, 0.80, 5.72, 0.38, 0.95, 10, {}),                       # rule 1a
+    (4, C6, 0.56, 5.15, 0.38, 1.10, 0, {}),                        # rule 1b ... "Part D drug plans."
+    (4, C6, 5.62, 8.60, 0.38, 1.00, 0, {}),                        # jump cut -> "Now, you can meet..."
+    (5, C3, 0.00, 5.15, 0.38, 0.95, 0, {}),                        # rule 2a
+    (6, C9, 0.05, 7.70, 0.38, 1.10, 0, {}),                        # rule 2b
+    (7, C10, 0.12, 7.95, 0.62, 0.95, 12, {}),                      # rule 3
+    (8, C8, 0.45, 5.80, 0.62, 1.12, 0, {}),                        # nuance
+    (9, C7, 0.00, 9.55, 0.50, 0.90, 10, {"fade": (9.30, 9.40)}),   # takeaway (natural end on "told")
+    (10, C5, 0.20, 8.00, 0.50, 1.05, 0, {}),                       # CTA
 ]
+
+
+def seg_len(seg):
+    return seg[7].get("dur", seg[3] - seg[2])
+
+
 STARTS = [0.0]
-for _f, a, b in SEGMENTS:
-    STARTS.append(STARTS[-1] + (b - a))
+for _seg in SEGMENTS:
+    STARTS.append(STARTS[-1] + seg_len(_seg))
 SPEECH_END = STARTS[-1]
 DURATION = SPEECH_END + TAIL
 
 
 def S(n):
-    """Start time of scene n (1-based)."""
-    return STARTS[n - 1]
+    """Start time of scene n (first segment carrying that scene id)."""
+    return next(STARTS[i] for i, sg in enumerate(SEGMENTS) if sg[0] == n)
 
 
 def Wd(n, clip_t):
     """Timeline time of a word spoken at clip_t inside scene n's source clip."""
-    return S(n) + clip_t - SEGMENTS[n - 1][1]
+    segs = [(i, sg) for i, sg in enumerate(SEGMENTS) if sg[0] == n]
+    for i, sg in segs:
+        if clip_t <= sg[3]:
+            return STARTS[i] + max(0.0, clip_t - sg[2])
+    i, sg = segs[-1]
+    return STARTS[i] + clip_t - sg[2]
 
-
-# Speaker blocking: (scene, X fraction, scale, slide frames)
-BLOCKING = [
-    (1, 0.50, 1.05, 0),
-    (2, 0.50, 1.18, 0),
-    (3, 0.38, 0.95, 10),
-    (4, 0.38, 1.10, 0),
-    (5, 0.38, 0.95, 0),
-    (6, 0.38, 1.10, 0),
-    (7, 0.62, 0.95, 12),
-    (8, 0.62, 1.12, 0),
-    (9, 0.50, 0.90, 10),
-    (10, 0.50, 1.05, 0),
-]
 
 # Key moments (all synced to transcript word timings)
 T = dict(
@@ -69,9 +87,10 @@ T = dict(
     tab1=Wd(1, 2.16), tab2=Wd(1, 2.16) + 0.18, tab3=Wd(1, 2.16) + 0.36,
     qping=Wd(1, 7.96),
     name=S(2) + 0.12,
-    card1=S(3) + 0.30, red1=Wd(3, 2.30) - 0.20, watch=Wd(3, 2.30),
+    tk=S("tk"), vo=S("tk") + VO_LEAD, gone=S("tk") + VO_LEAD + VO_GONE,
+    card1=S("tk"), red1=Wd(3, 2.30) - 0.20, watch=Wd(3, 2.30),
     pill_ma=Wd(4, 2.78), pill_pd=Wd(4, 3.76),
-    strike1=Wd(4, 5.82), green1=Wd(4, 6.56), chime1=Wd(4, 7.90),
+    strike1=Wd(4, 5.72), green1=Wd(4, 6.86), chime1=Wd(4, 7.90),
     dock1=S(5), card2=S(5) + 0.28, flow2=Wd(5, 3.02),
     old2=S(6) + 0.15, wait12=Wd(6, 3.96), buzz2=Wd(6, 4.32),
     new2=Wd(6, 6.26), click2=Wd(6, 7.04),
@@ -79,7 +98,7 @@ T = dict(
     best=Wd(7, 4.86), most=Wd(7, 5.30),
     false3=Wd(8, 1.66), warn3=Wd(8, 3.78),
     dock3=S(9), stack=S(9) + 0.30, footer=S(9) + 1.30, swipe=Wd(9, 8.00),
-    out=S(10), cta=S(10) + 0.22, phone=Wd(10, 3.42), phone_end=Wd(10, 5.60),
+    out=S(10), cta=S(10) + 0.22, phone=Wd(10, 3.42), phone_end=Wd(10, 5.40),
     web=Wd(10, 5.82), webclick=Wd(10, 6.32),
 )
 
@@ -518,12 +537,53 @@ def strike(d, x0, y, x1, p, color=RED, width=8):
     d.line([(x0, y), (lerp(x0, x1, p), y)], fill=color, width=width)
 
 
+TKR = (MX, CARD[1], W - MX, 1720)   # full-height Rule #1 takeover card
+
+
+@lru_cache(None)
+def takeover1_img():
+    im = blank(CW, 1300)
+    d = ImageDraw.Draw(im)
+    lab = pill("RULE #1", NAVY, WHITE, size=44, pad=34, h_=82)
+    im.alpha_composite(lab, ((CW - lab.width) // 2, 40))
+    f = font("black", 100)
+    for k, ln in enumerate(["48-Hour", "Waiting Rule", "Is Gone"]):
+        d.text((CW / 2, 840 + k * 118), ln, font=f, fill=NAVY if k < 2 else RED, anchor="mm")
+    d.rectangle([CW / 2 - 110, 1200, CW / 2 + 110, 1210], fill=GOLD)
+    return im
+
+
+def draw_takeover1(layer, rect, t, a):
+    x0, y0, x1, y1 = rect
+    cy = (y0 + y1) / 2
+    paste(layer, takeover1_img(), (x0 + x1) / 2, cy, 1, a)
+    clock_y = cy - 650 + 470
+    spin = prog(t, T["vo"], VO_LEN) * 1.5
+    paste(layer, icon_clock(320, spin), (x0 + x1) / 2, clock_y, 1, a)
+    if t >= T["gone"]:
+        ps = prog(t, T["gone"], 0.18)
+        paste(layer, stamp_img("GONE"), (x0 + x1) / 2 + 150, clock_y + 110,
+              lerp(2.6, 1.6, ease_out(ps)), ease_out(ps) * a, rot=12)
+
+
 def draw_card1(layer, t):
-    rect, p = card_rect_for(t, 0, T["card1"], T["dock1"])
-    if rect is None:
+    if t < T["tk"] or t >= T["dock1"] + 0.28:
         return
+    tr = tab_rect(0)
+    ta = ca = 0.0
+    if t >= T["dock1"]:
+        pd = ease_in_out(prog(t, T["dock1"], 0.28))
+        rect, ca = lerp_rect(CARD, tr, pd), 1 - pd
+    elif t >= S(3):
+        q = ease_in_out(prog(t, S(3), 0.4))
+        rect = lerp_rect(TKR, CARD, q)
+        ta, ca = 1 - clamp(q / 0.4), clamp((q - 0.6) / 0.4)
+    else:
+        p = ease_out(prog(t, T["tk"], 0.38))
+        rect, ta = lerp_rect(tr, TKR, p), clamp((p - 0.6) / 0.4)
     draw_card_frame(layer, rect, NAVY)
-    ca = clamp((p - 0.6) / 0.4)
+    if ta > 0:
+        draw_takeover1(layer, rect, t, ta)
     if ca <= 0:
         return
     x0, y0, x1, y1 = rect
@@ -841,7 +901,7 @@ def draw_cta(layer, t):
     dv = blank(560, 6)
     ImageDraw.Draw(dv).rectangle([0, 0, 560, 6], fill=GOLD)
     paste(layer, dv, cx, y0 + 420, 1, p)
-    # phone, typed digit by digit
+    # phone: full number shown with the card; digits light up gold as it's spoken
     num = "800-324-9986"
     n = 0
     if t >= T["phone"]:
@@ -852,12 +912,13 @@ def draw_cta(layer, t):
     full_w = text_size(num, fnum)[0]
     ix = (ph.width - full_w - 110) / 2
     ph.alpha_composite(icon_phone(92), (int(ix), 39))
-    shown = num[:n]
-    pd.text((ix + 110, 85), shown, font=fnum, fill=WHITE, anchor="lm")
-    if 0 < n < len(num) and int(t * 6) % 2 == 0:
-        cxp = ix + 110 + (text_size(shown, fnum)[0] + fnum.getbbox(shown)[0] if shown else 0) + 6
-        pd.rectangle([cxp, 40, cxp + 8, 130], fill=GOLD_LT)
-    paste(layer, ph, cx, y0 + 540, 1, p)
+    pd.text((ix + 110, 85), num, font=fnum, fill=WHITE, anchor="lm")
+    if n:
+        pd.text((ix + 110, 85), num[:n], font=fnum, fill=GOLD_LT, anchor="lm")
+    pulse = 1.0
+    if t >= T["phone"]:
+        pulse += 0.05 * math.sin(math.pi * prog(t, T["phone"], T["phone_end"] - T["phone"] + 0.3))
+    paste(layer, ph, cx, y0 + 540, pulse, p)
     # website + cursor click
     if t >= T["web"]:
         pw = ease_out(prog(t, T["web"], 0.3))
@@ -914,10 +975,10 @@ def hero_img():
 
 
 def draw_namecard(layer, t):
-    if t < T["name"] or t > S(3) + 0.4:
+    if t < T["name"] or t > T["tk"] + 0.4:
         return
     ps = pop_scale(t, T["name"], 0.38)
-    pout = 1 - ease_in_out(prog(t, S(3), 0.3))
+    pout = 1 - ease_in_out(prog(t, T["tk"], 0.3))
     im = namecard_img()
     paste(layer, im, W / 2, 760, ps * lerp(0.6, 1, pout), pout)
 
@@ -936,12 +997,12 @@ def namecard_img():
 
 
 def graphics(t):
-    layer = blank(W, 1100)
+    layer = blank(W, H)
     # stage exits upward for the CTA
     out = ease_in_out(prog(t, T["out"], 0.45))
     yoff = -1100 * out
     if out < 1:
-        stage = blank(W, 1100)
+        stage = blank(W, H)
         # header drops down
         if t >= T["header"]:
             ph = ease_back(prog(t, T["header"], 0.45), 1.3)
@@ -988,17 +1049,23 @@ BASE_K = 1.05          # source px -> canvas px at "100%"
 
 
 def speaker_pose(t):
-    """(x_frac, scale) with slides between scene blocks."""
-    scene = 1
-    for n in range(1, 11):
-        if t >= S(n):
-            scene = n
-    x, s, slide = BLOCKING[scene - 1][1:]
-    if slide and scene > 1:
-        px, ps_ = BLOCKING[scene - 2][1:3]
-        k = ease_in_out(prog(t, S(scene), slide / FPS))
+    """(x_frac, scale) with slides between segments."""
+    i = max(k for k in range(len(SEGMENTS)) if t >= STARTS[k])
+    x, s, slide = SEGMENTS[i][4:7]
+    if slide and i > 0:
+        px, ps_ = SEGMENTS[i - 1][4:6]
+        k = ease_in_out(prog(t, STARTS[i], slide / FPS))
         x, s = lerp(px, x, k), lerp(ps_, s, k)
     return x, s
+
+
+def speaker_alpha(t):
+    """Hidden behind the Rule #1 takeover card."""
+    if T["tk"] <= t < S(3):
+        return 1 - ease_in_out(prog(t, T["tk"] + 0.1, 0.25))
+    if S(3) <= t < S(3) + 0.3:
+        return ease_in_out(prog(t, S(3) + 0.05, 0.25))
+    return 1.0
 
 
 def key_frame(rgb):
@@ -1022,9 +1089,14 @@ def key_frame(rgb):
 
 
 def place_speaker(canvas, rgb, t):
+    a = speaker_alpha(t)
+    if a <= 0.005:
+        return
     x_frac, s = speaker_pose(t)
     k = BASE_K * s
     img = key_frame(rgb)
+    if a < 0.999:
+        img.putalpha(img.getchannel("A").point(lambda v: int(v * a)))
     # crop away everything below the canvas before scaling
     src_bottom = min(1280, int(FACE[1] + (H - FACE_Y) / k) + 2)
     img = img.crop((0, 0, 720, src_bottom))
@@ -1065,12 +1137,14 @@ def compose(rgb, t):
 # ---------------------------------------------------------------- io
 def video_reader(start, end):
     inputs, chains = [], []
-    for i, (f, a, b) in enumerate(SEGMENTS):
+    for i, seg in enumerate(SEGMENTS):
+        f, a, b = seg[1:4]
+        stretch = seg_len(seg) / (b - a)
         inputs += ["-i", os.path.join(ROOT, f)]
-        chains.append(f"[{i}:v]trim={a}:{b},setpts=PTS-STARTPTS,fps={FPS},format=rgb24[v{i}]")
+        chains.append(f"[{i}:v]trim={a}:{b},setpts=(PTS-STARTPTS)*{stretch:.6f},fps={FPS},format=rgb24[v{i}]")
     fc = ";".join(chains) + ";" + "".join(f"[v{i}]" for i in range(len(SEGMENTS))) + \
         f"concat=n={len(SEGMENTS)}:v=1:a=0,tpad=stop_mode=clone:stop_duration={TAIL}," \
-        f"trim=start={start}:end={end},setpts=PTS-STARTPTS[out]"
+        f"trim=start_frame={round(start * FPS)}:end_frame={round(end * FPS)},setpts=PTS-STARTPTS[out]"
     cmd = ["ffmpeg", "-v", "error"] + inputs + ["-filter_complex", fc, "-map", "[out]", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"]
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     n = 720 * 1280 * 3

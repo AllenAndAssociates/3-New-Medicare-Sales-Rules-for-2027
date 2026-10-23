@@ -32,22 +32,42 @@ n_total = int(round(R.DURATION * SR))
 
 # ---- voice: same trims as the picture, 10 ms edge fades
 voice = np.zeros(n_total, np.float32)
-for i, (f, a, b) in enumerate(R.SEGMENTS):
+for i, sg in enumerate(R.SEGMENTS):
+    f, a, b, opts = sg[1], sg[2], sg[3], sg[7]
+    if opts.get("mute"):
+        continue
     seg = load(os.path.join(R.ROOT, f), a, b)
     fl = int(0.01 * SR)
     seg[:fl] *= np.linspace(0, 1, fl)
     seg[-fl:] *= np.linspace(1, 0, fl)
+    if "fade" in opts:
+        f0, f1 = (int((x - a) * SR) for x in opts["fade"])
+        seg[f0:f1] *= np.cos(np.linspace(0, np.pi / 2, f1 - f0)) ** 2
+        seg[f1:] = 0
     o = int(round(R.STARTS[i] * SR))
     seg = seg[: n_total - o]
     voice[o:o + len(seg)] += seg
+# "First: ..." line (Arric Allen ElevenLabs voice), matched to the clip voice level
+vo = load(os.path.join(ASSETS, os.path.basename(R.VO_FIRST)))
+clip_rms = rms_db(voice[np.abs(voice) > 0.01])
+vo *= db(clip_rms - rms_db(vo[np.abs(vo) > 0.01]))
+o = int(round(T["vo"] * SR))
+voice[o:o + len(vo)] += vo[: n_total - o]
 speech = voice[np.abs(voice) > 0.01]
 voice *= db(-17 - rms_db(speech))   # voice ~ -17 dBFS RMS while talking
 
 # ---- music: offset so its resolving chord lands right after the website click
 music_src = load(os.path.join(ASSETS, "music.mp3"))
-MUSIC_OFFSET = 0.2  # music time = video time + offset
-music = music_src[int(MUSIC_OFFSET * SR):][:n_total]
-music = np.pad(music, (0, n_total - len(music)))
+MUSIC_OFFSET = 0.2   # music time = video time + offset (before the Rule #3 hard stop)
+CHORD_AT = 67.0      # resolving final chord in the music file
+# The bed is muted during the hard stop, so re-sync there: after the drop-back-in
+# the music is offset so its final chord lands just after the website click.
+back_i = int(round(T["music_back"] * SR))
+post_off = CHORD_AT - (T["webclick"] + 0.1)
+pre = music_src[int(MUSIC_OFFSET * SR):][:back_i]
+post = music_src[int((T["music_back"] + post_off) * SR):][: n_total - back_i]
+music = np.concatenate([np.pad(pre, (0, back_i - len(pre))), post])
+music = np.pad(music, (0, n_total - len(music)))[:n_total]
 music *= db(-28 - rms_db(music[: int(60 * SR)]))   # bed ~11 dB under the voice
 
 t = np.arange(n_total) / SR
@@ -94,9 +114,11 @@ for k_ in ("tab1", "tab2", "tab3"):
 hit("qping", T["qping"], -12)
 # Scene 2
 hit("softpop", T["name"], -14)
+# Rule #1 takeover
+hit("pop", T["tk"] + 0.05, -11)
+hit("thud", T["gone"], -12)
 # Scene 3
 hit("whoosh", S(3), -12)
-hit("pop", T["card1"] + 0.05, -11)
 hit("stopwatch", T["watch"], -15)
 # Scene 4
 hit("softpop", T["pill_ma"], -13)
@@ -122,7 +144,6 @@ hit("snap", T["dock3"] + 0.05, -13)
 hit("shuffle", T["stack"], -11)
 hit("highlight", T["swipe"], -11)
 # Scene 10
-hit("whoosh", T["cta"], -14)
 hit("keys", T["phone"], -16)
 hit("click", T["webclick"], -9)
 
