@@ -1,6 +1,6 @@
 # 9:16 edit — 3 New Medicare Sales Rules for 2027
 
-Output: `../Medicare_Sales_Rules_2027_9x16.mp4` (1080×1920, 30 fps, -14 LUFS)
+Output: `../Medicare_Sales_Rules_2027_9x16.mp4` (light) and `../Medicare_Sales_Rules_2027_9x16_navy.mp4` (`THEME=navy python3 render.py ...`) — 1080×1920, 30 fps, -14 LUFS
 
 - `render.py` — keys the green-screen clips, places the speaker in the bottom 45% stage
   (X 50/38/62%, scale punch-ins), and draws the USAFacts-style top 55% data stage
