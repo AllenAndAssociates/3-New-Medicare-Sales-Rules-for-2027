@@ -156,7 +156,7 @@ hit("snap", T["dock3"] + 0.05, -13)
 hit("shuffle", T["stack"], -11)
 hit("highlight", T["swipe"], -19)
 # Scene 10
-hit("keys", T["phone"], -16)
+hit("keys", T["phone"], -20)
 hit("click", T["webclick"], -9)
 
 mix = voice + music + sfx
