@@ -104,6 +104,10 @@ T = dict(
 
 # ---------------------------------------------------------------- style
 BG = (244, 244, 240)
+# THEME=navy renders the dark-canvas variant (navy page, white cards, glow behind speaker)
+NAVY_THEME = os.environ.get("THEME", "light") == "navy"
+NAVY_BG = (12, 31, 60)
+NAVY_LIFT = (24, 54, 96)          # header / CTA fill on the navy canvas
 NAVY = (11, 37, 69)
 INK = (28, 31, 36)
 MUTED = (96, 102, 112)
@@ -468,6 +472,8 @@ def tab_state(i, t):
     if t >= active_from:
         if i == 2:
             return "3: Ad Wording", AMBER, NAVY, None, False
+        if NAVY_THEME:
+            return TAB_DONE[i], (40, 84, 142), WHITE, GOLD, False
         return TAB_DONE[i], NAVY, WHITE, None, False
     if i == 2 and t >= T["qping"]:
         return "3 ?", AMBER_BG, (150, 95, 0), AMBER, False
@@ -496,7 +502,7 @@ def tab_img(label, fill, fg, outline, check):
 @lru_cache(None)
 def header_img():
     x0, y0, x1, y1 = HEADER
-    im, pad = shadowed_card(x1 - x0, y1 - y0, fill=NAVY, radius=16)
+    im, pad = shadowed_card(x1 - x0, y1 - y0, fill=NAVY_LIFT if NAVY_THEME else NAVY, radius=16)
     d = ImageDraw.Draw(im)
     f = font("xb", 42)
     d.text((pad + (x1 - x0) / 2, pad + (y1 - y0) / 2), "2027 MEDICARE MARKETING RULES", font=f, fill=WHITE, anchor="mm")
@@ -885,7 +891,7 @@ def draw_cta(layer, t):
     rect = (MX, 170, W - MX, 1010)
     oy = 700 * (1 - p)
     x0, y0, x1, y1 = rect[0], rect[1] + oy, rect[2], rect[3] + oy
-    draw_card_frame(layer, (x0, y0, x1, y1), GOLD, fill=NAVY)
+    draw_card_frame(layer, (x0, y0, x1, y1), GOLD, fill=NAVY_LIFT if NAVY_THEME else NAVY)
     cx = W / 2
     # gold inner border
     bd = blank(x1 - x0 - 36, y1 - y0 - 36)
@@ -964,9 +970,10 @@ def draw_hero(layer, t):
 def hero_img():
     im = blank(CW, 600)
     d = ImageDraw.Draw(im)
-    d.text((CW / 2, 210), "3", font=font("black", 330), fill=NAVY, anchor="mm")
-    d.text((CW / 2, 420), "Medicare sales rules", font=font("xb", 60), fill=INK, anchor="mm")
-    d.text((CW / 2, 494), "change in 2027", font=font("xb", 60), fill=INK, anchor="mm")
+    fg, sub = (WHITE, (225, 232, 242)) if NAVY_THEME else (NAVY, INK)
+    d.text((CW / 2, 210), "3", font=font("black", 330), fill=fg, anchor="mm")
+    d.text((CW / 2, 420), "Medicare sales rules", font=font("xb", 60), fill=sub, anchor="mm")
+    d.text((CW / 2, 494), "change in 2027", font=font("xb", 60), fill=sub, anchor="mm")
     d.rectangle([CW / 2 - 90, 548, CW / 2 + 90, 556], fill=GOLD)
     return im
 
@@ -1125,6 +1132,16 @@ def _composite_clipped(canvas, img, ox, oy):
 
 @lru_cache(None)
 def background():
+    if NAVY_THEME:
+        # navy canvas, soft lighter-navy glow behind the speaker for head separation
+        yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
+        r = np.sqrt(((xx - W / 2) / 620) ** 2 + ((yy - 1330) / 560) ** 2)
+        glow = np.clip(1 - r, 0, 1) ** 1.6
+        vign = np.clip(1 - 0.18 * (yy / H) ** 2, 0, 1)
+        base, lift = np.array(NAVY_BG, np.float32), np.array((44, 84, 138), np.float32)
+        rgb = (base + (lift - base) * glow[..., None]) * vign[..., None]
+        a = np.dstack([rgb.clip(0, 255).astype(np.uint8), np.full((H, W), 255, np.uint8)])
+        return Image.fromarray(a, "RGBA")
     bg = Image.new("RGBA", (W, H), BG + (255,))
     d = ImageDraw.Draw(bg)
     # faint stage floor gradient for the speaker area
