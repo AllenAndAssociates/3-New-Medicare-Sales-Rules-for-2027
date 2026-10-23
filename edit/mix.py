@@ -73,7 +73,7 @@ pre = music_src[int(MUSIC_OFFSET * SR):][:back_i]
 post = music_src[int((T["music_back"] + post_off) * SR):][: n_total - back_i]
 music = np.concatenate([np.pad(pre, (0, back_i - len(pre))), post])
 music = np.pad(music, (0, n_total - len(music)))[:n_total]
-music *= db(-28 - rms_db(music[: int(60 * SR)]))   # bed ~11 dB under the voice
+music *= db(-34 - rms_db(music[: int(60 * SR)]))   # bed ~17 dB under the voice
 
 t = np.arange(n_total) / SR
 gain = np.ones(n_total, np.float32)
@@ -84,9 +84,16 @@ k = (t >= stop0) & (t < stop0 + 0.015)
 gain[k] = 1 - (t[k] - stop0) / 0.015
 k = (t >= back) & (t < back + 0.25)
 gain[k] = (t[k] - back) / 0.25
-# warm swell into the CTA (+4 dB, i.e. -26 -> -22)
+# duck a further 4 dB while Arric is talking, easing back up in the pauses
+win = int(0.05 * SR)
+env = np.sqrt(np.convolve(voice ** 2, np.ones(win) / win, mode="same"))
+talk = (env > db(-40)).astype(np.float32)
+sm = int(0.25 * SR)
+duck = np.convolve(talk, np.ones(sm) / sm, mode="same")
+gain *= db(-4 * duck).astype(np.float32)
+# warm swell into the CTA (+3 dB)
 k = t >= R.S(10)
-gain[k] *= db(4 * np.clip((t[k] - R.S(10)) / 1.5, 0, 1))
+gain[k] *= db(3 * np.clip((t[k] - R.S(10)) / 1.5, 0, 1))
 # gentle tail fade
 k = t >= R.DURATION - 0.6
 gain[k] *= np.clip((R.DURATION - t[k]) / 0.6, 0, 1)

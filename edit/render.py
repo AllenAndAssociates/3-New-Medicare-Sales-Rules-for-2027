@@ -104,8 +104,8 @@ T = dict(
 
 # ---------------------------------------------------------------- style
 BG = (244, 244, 240)
-# THEME=navy renders the dark-canvas variant (navy page, white cards, glow behind speaker)
-NAVY_THEME = os.environ.get("THEME", "light") == "navy"
+# Default navy canvas (white cards, glow behind speaker); THEME=light for the off-white variant
+NAVY_THEME = os.environ.get("THEME", "navy") == "navy"
 NAVY_BG = (12, 31, 60)
 NAVY_LIFT = (24, 54, 96)          # header / CTA fill on the navy canvas
 NAVY = (11, 37, 69)
