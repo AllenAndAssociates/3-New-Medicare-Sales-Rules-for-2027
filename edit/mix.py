@@ -36,7 +36,12 @@ for i, sg in enumerate(R.SEGMENTS):
     f, a, b, opts = sg[1], sg[2], sg[3], sg[7]
     if opts.get("mute"):
         continue
-    seg = load(os.path.join(R.ROOT, f), a, b)
+    # Arric's voice: ElevenLabs speech-to-speech conversion of the clip audio
+    # (timing-preserving, so lip-sync holds). See .claude/skills/arric-talking-head.
+    sts = os.path.join(ASSETS, "sts", os.path.splitext(f)[0] + ".mp3")
+    if not os.path.exists(sts):
+        sys.exit(f"missing speech-to-speech audio for {f}; run .claude/skills/arric-talking-head/scripts/sts_convert.py first")
+    seg = load(sts, a, b)
     fl = int(0.01 * SR)
     seg[:fl] *= np.linspace(0, 1, fl)
     seg[-fl:] *= np.linspace(1, 0, fl)

@@ -10,15 +10,19 @@ Output: `../Medicare_Sales_Rules_2027_9x16.mp4` (1080×1920, 30 fps, -14 LUFS)
   "Number three is interesting", back in on "flexibility", +4 dB swell on the CTA,
   resolving chord after the website click) + frame-synced SFX in `audio/`.
 
+- Voice: all on-camera lines use Arric's ElevenLabs clone via speech-to-speech
+  (`audio/sts/`), per the `arric-talking-head` skill in `.claude/skills/`.
+
 Rebuild:
 
 ```
+python3 ../.claude/skills/arric-talking-head/scripts/sts_convert.py --out audio/sts ../*720p*.mp4 ../Man_speaking_about_Medicare_rules_20261023175043.mp4
 python3 render.py --out video.mp4          # or split with --start/--end and concat
 python3 mix.py mix.wav
 ffmpeg -i video.mp4 -i mix.wav -map 0:v -map 1:a -c:v copy -c:a aac -b:a 192k -shortest out.mp4
 ```
 
-The A&A badge is a placeholder monogram — swap `logo_badge()` for the real logo file.
+The name card and end card use the official logo (`assets/allen-associates-logo.png`).
 
 `audio/vo_first.wav` ("First: the 48-hour waiting rule is gone") is not in any source
 clip; it was generated with the "Arric Allen" ElevenLabs voice and plays over a

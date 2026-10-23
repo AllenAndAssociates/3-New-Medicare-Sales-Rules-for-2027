@@ -357,15 +357,14 @@ def icon_cursor(size):
     return im
 
 
-def logo_badge(size):
-    """Placeholder agency mark (swap for the real logo file when available)."""
-    im = blank(size, size)
-    d = ImageDraw.Draw(im)
-    d.ellipse([0, 0, size - 1, size - 1], fill=NAVY)
-    d.ellipse([size * .06, size * .06, size * .94, size * .94], outline=GOLD, width=max(3, size // 22))
-    f = font("black", int(size * .32))
-    d.text((size / 2, size / 2 + 1), "A&A", font=f, fill=GOLD_LT, anchor="mm")
-    return im
+LOGO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "allen-associates-logo.png")
+
+
+@lru_cache(None)
+def official_logo(width):
+    """Official Allen & Associates logo (white background), scaled to width."""
+    im = Image.open(LOGO).convert("RGBA")
+    return im.resize((width, round(im.height * width / im.width)), Image.LANCZOS)
 
 
 # ---------------------------------------------------------------- reusable components
@@ -892,12 +891,10 @@ def draw_cta(layer, t):
     bd = blank(x1 - x0 - 36, y1 - y0 - 36)
     ImageDraw.Draw(bd).rounded_rectangle([0, 0, bd.width - 1, bd.height - 1], radius=18, outline=(201, 162, 39, 150), width=3)
     paste(layer, bd, cx, (y0 + y1) / 2 + 6, 1, p)
-    paste(layer, logo_badge(170), cx, y0 + 140, 1, p)
-    name = blank(CW, 150)
-    nd = ImageDraw.Draw(name)
-    nd.text((CW / 2, 40), "ALLEN & ASSOCIATES", font=font("black", 64), fill=WHITE, anchor="mm")
-    nd.text((CW / 2, 110), "SINCE 1994", font=font("xb", 34), fill=GOLD_LT, anchor="mm")
-    paste(layer, name, cx, y0 + 320, 1, p)
+    paste(layer, cta_logo_panel(), cx, y0 + 205, 1, p)
+    since = blank(CW, 60)
+    ImageDraw.Draw(since).text((CW / 2, 30), "SINCE 1994", font=font("xb", 36), fill=GOLD_LT, anchor="mm")
+    paste(layer, since, cx, y0 + 385, 1, p)
     dv = blank(560, 6)
     ImageDraw.Draw(dv).rectangle([0, 0, 560, 6], fill=GOLD)
     paste(layer, dv, cx, y0 + 420, 1, p)
@@ -984,15 +981,26 @@ def draw_namecard(layer, t):
 
 
 @lru_cache(None)
+def cta_logo_panel():
+    lg = official_logo(720)
+    w_, h_ = lg.width + 60, lg.height + 50
+    im = blank(w_, h_)
+    ImageDraw.Draw(im).rounded_rectangle([0, 0, w_ - 1, h_ - 1], radius=22, fill=WHITE)
+    im.alpha_composite(lg, (30, 25))
+    return im
+
+
+@lru_cache(None)
 def namecard_img():
-    w_, h_ = 900, 230
+    w_, h_ = 940, 250
     im, pad = shadowed_card(w_, h_, fill=WHITE, radius=26)
     d = ImageDraw.Draw(im)
-    im.alpha_composite(logo_badge(170), (pad + 32, pad + 30))
-    d.text((pad + 232, pad + 70), "Arric Allen", font=font("black", 66), fill=NAVY, anchor="lm")
-    d.rectangle([pad + 232, pad + 118, pad + 300, pad + 124], fill=GOLD)
-    d.text((pad + 232, pad + 166), "Allen & Associates (Since 1994)", font=fit_font("Allen & Associates (Since 1994)", "sb", 36, 620),
-           fill=MUTED, anchor="lm")
+    d.text((pad + 40, pad + 82), "Arric Allen", font=font("black", 64), fill=NAVY, anchor="lm")
+    d.rectangle([pad + 40, pad + 130, pad + 108, pad + 136], fill=GOLD)
+    d.text((pad + 40, pad + 178), "Since 1994", font=font("sb", 38), fill=MUTED, anchor="lm")
+    d.line([(pad + 448, pad + 36), (pad + 448, pad + h_ - 36)], fill=LINE, width=3)
+    lg = official_logo(450)
+    im.alpha_composite(lg, (pad + 470, pad + (h_ - lg.height) // 2))
     return im
 
 
