@@ -2,7 +2,7 @@
 
 Output: `../Medicare_Sales_Rules_2027_9x16.mp4` — navy canvas (default; `THEME=light` renders the off-white variant), 1080×1920, 30 fps, -14 LUFS
 
-- `render.py` — keys the green-screen clips, places the speaker in the bottom 45% stage
+- Source: `../Avatar Video_1080p.mp4` (single take). `render.py` — keys the green-screen footage, places the speaker in the bottom 45% stage
   (X 50/38/62%, scale punch-ins), and draws the USAFacts-style top 55% data stage
   (navy header, horizontal docked tabs 1/2/3, 90%-width expanding cards, CTA card).
   All graphic beats are synced to word timestamps from the clip transcripts.

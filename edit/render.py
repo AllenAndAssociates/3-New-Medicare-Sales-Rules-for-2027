@@ -19,39 +19,22 @@ W, H, FPS = 1080, 1920, 30
 TAIL = 0.7  # hold on last frame so the final chord rings out
 
 # ---------------------------------------------------------------- timeline
-C1 = "Man_speaking_about_Medicare_rules_20261023175043.mp4"
-C2 = "Man_speaking_to_camera_720p_20261023174212.mp4"
-C3 = "Presenter_explaining_Medicare_ed…_720p_20261023174558.mp4"
-C4 = "Presenter_explaining_waiting_rul…_720p_20261023174322.mp4"
-C5 = "Presenter_giving_Medicare_guidance_720p_20261023174956.mp4"
-C6 = "Presenter_speaking_about_Medicar…_720p_20261023175136.mp4"
-C7 = "Presenter_speaking_about_Medicar…_720p_20261023175346.mp4"
-C8 = "Presenter_speaking_against_green…_720p_20261023174859.mp4"
-C9 = "Presenter_speaking_to_camera_720p_20261023174650.mp4"
-C10 = "Presenter_speaking_to_camera_720p_20261023174737.mp4"
-
-# "First: the 48-hour waiting rule is gone" isn't in any clip; it plays as VO
-# over a full-screen Rule #1 card (speaker hidden, so no lip-sync mismatch).
-VO_FIRST = "audio/vo_first.wav"
-VO_LEAD, VO_LEN, VO_GONE = 0.15, 2.42, 2.16   # lead-in, line length, "gone" onset
-TK_DUR = VO_LEAD + VO_LEN + 0.22
+AV = "Avatar Video_1080p.mp4"   # single continuous take, 1080x1920, all 12 script lines
+SRC_W, SRC_H = 1080, 1920
 
 # (scene, clip, in, out, X fraction, scale, slide frames, opts)
-# Trimmed to the spoken line; silent holds removed. opts: dur (retime hidden
-# filler), mute, fade (clip-time voice fade-out window).
+# Cut on the natural breath between lines; punch-ins land on those cuts.
 SEGMENTS = [
-    (1, C1, 0.90, 8.72, 0.50, 1.05, 0, {}),                        # hook
-    (2, C2, 1.20, 3.72, 0.50, 1.18, 0, {}),                        # intro (silent smile cut)
-    ("tk", C2, 3.72, 6.00, 0.50, 1.18, 0, {"dur": TK_DUR, "mute": True}),  # Rule #1 takeover (hidden)
-    (3, C4, 0.80, 5.72, 0.38, 0.95, 10, {}),                       # rule 1a
-    (4, C6, 0.56, 5.15, 0.38, 1.10, 0, {}),                        # rule 1b ... "Part D drug plans."
-    (4, C6, 5.62, 8.60, 0.38, 1.00, 0, {}),                        # jump cut -> "Now, you can meet..."
-    (5, C3, 0.00, 5.15, 0.38, 0.95, 0, {}),                        # rule 2a
-    (6, C9, 0.05, 7.70, 0.38, 1.10, 0, {}),                        # rule 2b
-    (7, C10, 0.12, 7.75, 0.62, 0.95, 12, {}),                      # rule 3
-    (8, C8, 0.55, 5.80, 0.62, 1.12, 0, {}),                        # nuance
-    (9, C7, 0.00, 9.55, 0.50, 0.90, 10, {"fade": (9.30, 9.40)}),   # takeaway (natural end on "told")
-    (10, C5, 0.20, 8.00, 0.50, 1.05, 0, {}),                       # CTA
+    (1, AV, 0.00, 7.62, 0.50, 1.05, 0, {}),      # hook
+    (2, AV, 7.62, 13.60, 0.50, 1.18, 0, {}),     # intro ... since 1994
+    (3, AV, 13.60, 22.13, 0.38, 0.95, 10, {}),   # First: 48-hour rule ... form.
+    (4, AV, 22.13, 29.50, 0.38, 1.10, 0, {}),    # That applied ... right away.
+    (5, AV, 29.50, 35.22, 0.38, 0.95, 0, {}),    # Second: seminars
+    (6, AV, 35.22, 44.12, 0.38, 1.10, 0, {}),    # 12-hour wait ... immediately.
+    (7, AV, 44.12, 55.25, 0.62, 0.95, 12, {}),   # Number three ... proof upfront.
+    (8, AV, 55.25, 61.54, 0.62, 1.12, 0, {}),    # false claims ... TV commercials.
+    (9, AV, 61.54, 72.14, 0.50, 0.90, 10, {}),   # takeaway ... being told.
+    (10, AV, 72.14, 82.07, 0.50, 1.05, 0, {}),   # CTA
 ]
 
 
@@ -81,25 +64,24 @@ def Wd(n, clip_t):
     return STARTS[i] + clip_t - sg[2]
 
 
-# Key moments (all synced to transcript word timings)
+# Key moments (all synced to transcript word timings of the avatar take)
 T = dict(
     header=0.20,
-    tab1=Wd(1, 2.16), tab2=Wd(1, 2.16) + 0.18, tab3=Wd(1, 2.16) + 0.36,
-    qping=Wd(1, 7.96),
+    tab1=Wd(1, 1.46), tab2=Wd(1, 1.46) + 0.18, tab3=Wd(1, 1.46) + 0.36,   # "three rules"
+    qping=Wd(1, 6.78),                                                     # "surprise"
     name=S(2) + 0.12,
-    tk=S("tk"), vo=S("tk") + VO_LEAD, gone=S("tk") + VO_LEAD + VO_GONE,
-    card1=S("tk"), red1=Wd(3, 2.30) - 0.20, watch=Wd(3, 2.30),
-    pill_ma=Wd(4, 2.78), pill_pd=Wd(4, 3.76),
-    strike1=Wd(4, 5.85), green1=Wd(4, 6.86), chime1=Wd(4, 7.90),
-    dock1=S(5), card2=S(5) + 0.28, flow2=Wd(5, 3.02),
-    old2=S(6) + 0.15, wait12=Wd(6, 3.96), buzz2=Wd(6, 4.32),
-    new2=Wd(6, 6.26), click2=Wd(6, 7.04),
-    dock2=S(7), card3=S(7) + 0.12, tv=S(7) + 0.75, music_back=Wd(7, 3.34),
-    best=Wd(7, 4.86), most=Wd(7, 5.30),
-    false3=Wd(8, 1.66), warn3=Wd(8, 3.78),
-    dock3=S(9), stack=S(9) + 0.30, footer=S(9) + 1.30, swipe=Wd(9, 8.00),
-    out=S(10), cta=S(10) + 0.22, phone=Wd(10, 3.42), phone_end=Wd(10, 5.40),
-    web=Wd(10, 5.82), webclick=Wd(10, 6.32),
+    card1=Wd(3, 13.72), red1=Wd(3, 18.44) - 0.20, watch=Wd(3, 18.44),      # "First" / "wait"
+    pill_ma=Wd(4, 24.44), pill_pd=Wd(4, 25.40),
+    strike1=Wd(4, 27.18), green1=Wd(4, 27.88), chime1=Wd(4, 28.78),       # "Now" / "meet" / "right away"
+    dock1=S(5), card2=S(5) + 0.28, flow2=Wd(5, 32.72),                    # "turn straight into"
+    old2=S(6) + 0.15, wait12=Wd(6, 39.42), buzz2=Wd(6, 39.94),
+    new2=Wd(6, 42.10), click2=Wd(6, 43.32),                               # "Now" / "immediately"
+    dock2=S(7), card3=S(7) + 0.12, tv=S(7) + 0.75, music_back=Wd(7, 48.10),  # "flexibility"
+    best=Wd(7, 50.36), most=Wd(7, 51.20),
+    false3=Wd(8, 56.76), warn3=Wd(8, 59.24),                              # "false claims" / "bigger promises"
+    dock3=S(9), stack=S(9) + 0.30, footer=S(9) + 1.30, swipe=Wd(9, 70.12),  # "understand"
+    out=S(10), cta=S(10) + 0.22, phone=Wd(10, 75.92), phone_end=Wd(10, 78.90),
+    web=Wd(10, 79.22), webclick=Wd(10, 79.88),
 )
 
 # ---------------------------------------------------------------- style
@@ -542,53 +524,12 @@ def strike(d, x0, y, x1, p, color=RED, width=8):
     d.line([(x0, y), (lerp(x0, x1, p), y)], fill=color, width=width)
 
 
-TKR = (-40, -40, W + 40, H + 40)   # full-screen Rule #1 takeover card (corners bleed off-frame)
-
-
-@lru_cache(None)
-def takeover1_img():
-    im = blank(CW, 1300)
-    d = ImageDraw.Draw(im)
-    lab = pill("RULE #1", NAVY, WHITE, size=44, pad=34, h_=82)
-    im.alpha_composite(lab, ((CW - lab.width) // 2, 40))
-    f = font("black", 100)
-    for k, ln in enumerate(["48-Hour", "Waiting Rule", "Is Gone"]):
-        d.text((CW / 2, 840 + k * 118), ln, font=f, fill=NAVY if k < 2 else RED, anchor="mm")
-    d.rectangle([CW / 2 - 110, 1200, CW / 2 + 110, 1210], fill=GOLD)
-    return im
-
-
-def draw_takeover1(layer, rect, t, a):
-    x0, y0, x1, y1 = rect
-    cy = (y0 + y1) / 2
-    paste(layer, takeover1_img(), (x0 + x1) / 2, cy, 1, a)
-    clock_y = cy - 650 + 470
-    spin = prog(t, T["vo"], VO_LEN) * 1.5
-    paste(layer, icon_clock(320, spin), (x0 + x1) / 2, clock_y, 1, a)
-    if t >= T["gone"]:
-        ps = prog(t, T["gone"], 0.18)
-        paste(layer, stamp_img("GONE"), (x0 + x1) / 2 + 150, clock_y + 110,
-              lerp(2.6, 1.6, ease_out(ps)), ease_out(ps) * a, rot=12)
-
-
 def draw_card1(layer, t):
-    if t < T["tk"] or t >= T["dock1"] + 0.28:
+    rect, p = card_rect_for(t, 0, T["card1"], T["dock1"])
+    if rect is None:
         return
-    tr = tab_rect(0)
-    ta = ca = 0.0
-    if t >= T["dock1"]:
-        pd = ease_in_out(prog(t, T["dock1"], 0.28))
-        rect, ca = lerp_rect(CARD, tr, pd), 1 - pd
-    elif t >= S(3):
-        q = ease_in_out(prog(t, S(3), 0.4))
-        rect = lerp_rect(TKR, CARD, q)
-        ta, ca = 1 - clamp(q / 0.4), clamp((q - 0.6) / 0.4)
-    else:
-        p = ease_out(prog(t, T["tk"], 0.3))
-        rect, ta = lerp_rect(tr, TKR, p), clamp((p - 0.6) / 0.4)
     draw_card_frame(layer, rect, NAVY)
-    if ta > 0:
-        draw_takeover1(layer, rect, t, ta)
+    ca = clamp((p - 0.6) / 0.4)
     if ca <= 0:
         return
     x0, y0, x1, y1 = rect
@@ -979,10 +920,10 @@ def hero_img():
 
 
 def draw_namecard(layer, t):
-    if t < T["name"] or t > T["tk"] + 0.4:
+    if t < T["name"] or t > T["card1"] + 0.4:
         return
     ps = pop_scale(t, T["name"], 0.38)
-    pout = 1 - ease_in_out(prog(t, T["tk"], 0.3))
+    pout = 1 - ease_in_out(prog(t, T["card1"], 0.3))
     im = namecard_img()
     paste(layer, im, W / 2, 760, ps * lerp(0.6, 1, pout), pout)
 
@@ -1058,9 +999,9 @@ def graphics(t):
 
 
 # ---------------------------------------------------------------- speaker
-FACE = (360, 260)      # anchor point in source frame (between eyes)
+FACE = (540, 394)      # anchor point in source frame (between eyes)
 FACE_Y = 1300          # where that anchor sits on the 9:16 canvas
-BASE_K = 1.05          # source px -> canvas px at "100%"
+BASE_K = 0.715         # source px -> canvas px at "100%" (1080x1920 avatar take)
 
 
 def speaker_pose(t):
@@ -1072,15 +1013,6 @@ def speaker_pose(t):
         k = ease_in_out(prog(t, STARTS[i], slide / FPS))
         x, s = lerp(px, x, k), lerp(ps_, s, k)
     return x, s
-
-
-def speaker_alpha(t):
-    """Hidden behind the Rule #1 takeover card."""
-    if T["tk"] <= t < S(3):
-        return 1 - ease_in_out(prog(t, T["tk"], 0.2))
-    if S(3) <= t < S(3) + 0.3:
-        return ease_in_out(prog(t, S(3) + 0.05, 0.25))
-    return 1.0
 
 
 def key_frame(rgb):
@@ -1104,18 +1036,13 @@ def key_frame(rgb):
 
 
 def place_speaker(canvas, rgb, t):
-    a = speaker_alpha(t)
-    if a <= 0.005:
-        return
     x_frac, s = speaker_pose(t)
     k = BASE_K * s
     img = key_frame(rgb)
-    if a < 0.999:
-        img.putalpha(img.getchannel("A").point(lambda v: int(v * a)))
     # crop away everything below the canvas before scaling
-    src_bottom = min(1280, int(FACE[1] + (H - FACE_Y) / k) + 2)
-    img = img.crop((0, 0, 720, src_bottom))
-    sw, sh = round(720 * k), round(src_bottom * k)
+    src_bottom = min(SRC_H, int(FACE[1] + (H - FACE_Y) / k) + 2)
+    img = img.crop((0, 0, SRC_W, src_bottom))
+    sw, sh = round(SRC_W * k), round(src_bottom * k)
     img = img.resize((sw, sh), Image.BILINEAR)
     ox = round(x_frac * W - FACE[0] * k)
     oy = round(FACE_Y - FACE[1] * k)
@@ -1172,12 +1099,12 @@ def video_reader(start, end):
         f"trim=start_frame={round(start * FPS)}:end_frame={round(end * FPS)},setpts=PTS-STARTPTS[out]"
     cmd = ["ffmpeg", "-v", "error"] + inputs + ["-filter_complex", fc, "-map", "[out]", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"]
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    n = 720 * 1280 * 3
+    n = SRC_W * SRC_H * 3
     while True:
         buf = p.stdout.read(n)
         if len(buf) < n:
             break
-        yield np.frombuffer(buf, np.uint8).reshape(1280, 720, 3)
+        yield np.frombuffer(buf, np.uint8).reshape(SRC_H, SRC_W, 3)
     p.wait()
 
 

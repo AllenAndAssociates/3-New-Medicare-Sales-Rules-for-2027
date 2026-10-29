@@ -52,12 +52,6 @@ for i, sg in enumerate(R.SEGMENTS):
     o = int(round(R.STARTS[i] * SR))
     seg = seg[: n_total - o]
     voice[o:o + len(seg)] += seg
-# "First: ..." line (Arric Allen ElevenLabs voice), matched to the clip voice level
-vo = load(os.path.join(ASSETS, os.path.basename(R.VO_FIRST)))
-clip_rms = rms_db(voice[np.abs(voice) > 0.01])
-vo *= db(clip_rms - rms_db(vo[np.abs(vo) > 0.01]) - 1.2)   # -1.2 dB: matches neighbours by LUFS
-o = int(round(T["vo"] * SR))
-voice[o:o + len(vo)] += vo[: n_total - o]
 speech = voice[np.abs(voice) > 0.01]
 voice *= db(-17 - rms_db(speech))   # voice ~ -17 dBFS RMS while talking
 
@@ -126,11 +120,9 @@ for k_ in ("tab1", "tab2", "tab3"):
 hit("qping", T["qping"], -12)
 # Scene 2
 hit("softpop", T["name"], -14)
-# Rule #1 takeover
-hit("pop", T["tk"] + 0.05, -11)
-hit("thud", T["gone"], -12)
 # Scene 3
 hit("whoosh", S(3), -12)
+hit("pop", T["card1"] + 0.05, -11)
 hit("stopwatch", T["watch"], -15)
 # Scene 4
 hit("softpop", T["pill_ma"], -13)
